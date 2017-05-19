@@ -5,19 +5,26 @@ The large majority of bluescreen and process recycle you can encounter on Exchan
 Managed Availability Troubleshooter script can help troubleshoot issues related to this module.
 
 This tool helps troubleshoot these scenarios :
+
 ——————————————————————————————————————————————
+
 – Bluescreen / Force reboot
 Here is the information you will see if you capture a memory.dmp during a crash triggered by Managed Availability:
 The crash will be a stop F4 or EF on wininit.
+
 kd> !analyze –v
 …
 MODULE_NAME: wininit
 PROCESS_NAME:  msexchangerepl
 BUGCHECK_STR:  0xEF_msexchangerepl
 DEFAULT_BUCKET_ID:  WIN8_DRIVER_FAULT
+
 – Service & application pool restart , components disabled , and all possible recovery actions triggered by Managed Availability
+
 – SCOM alerts reporting Managed Availability failures
+
 – Unhealthy monitor
+
 – Collect all related logs and analyze offline
 
 ManagedAvailabilityTroubleshooter script allows to :
