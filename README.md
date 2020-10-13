@@ -1,5 +1,5 @@
 # ManagedAvailabilityTroubleshooter
-Exchange 2013/2016 has a Monitoring system called Managed Availability which detects and recovers automatically from problems as they occur and as they are discovered.
+Exchange 2013/2016/2019 has a Monitoring system called Managed Availability which detects and recovers automatically from problems as they occur and as they are discovered.
 The large majority of bluescreen and process recycle you can encounter on Exchange server are triggered by this module in order to restore the service as quick as possible by forcing a restart.
 
 Managed Availability Troubleshooter script can help troubleshoot issues related to this module.
@@ -28,7 +28,7 @@ DEFAULT_BUCKET_ID:  WIN8_DRIVER_FAULT
 – provided PowerShell command used with verbose switch. Most properties can’t be seen by opening related eventlog and require to run PowerShell commands to see related attributes.
 
 ## How to run the tool
-Execute the script directly on the Exchange 2013 server you need to investigate using Exchange PowerShell.  
+Execute the script directly on the Exchange server you need to investigate using Exchange PowerShell.  
 Copy the script to c:\temp and run the script from this path  
 ![alt text][runonline]  
 Or Collect the logs & analyze on a different machine :  
