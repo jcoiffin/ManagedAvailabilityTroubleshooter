@@ -80,7 +80,7 @@ Param( [String] $ProbeResulteventcompletecmd , [String] $FilterXpath , [String] 
 		    }
 		}
 		if ($Script:KnownIssueDetectionAlreadydone -eq $false) {KnownIssueDetection $MonitorToInvestigate $ResponderToInvestigate}
-		$Probeevents | Select-Object -Property @{n="ExecutionStartTime (GMT)";e={$_.ExecutionStartTime}},@{n="ExecutionEndTime (GMT)";e={$_.ExecutionEndTime}},@{n='ResultType';e={$_.ResultType -replace "1","Timeout"-replace "2","Poisoned" -replace "3","Succeeded" -replace "4","Failed" -replace "5","Quarantined" -replace "6","Rejected"}},Error,Exception,FailureContext,ExecutionContext,RetryCount,ServiceName,ResultName,StateAttribute*| Out-GridView -title $titleprobeevents
+		$Probeevents | Select-Object -Property @{n="ExecutionStartTime (GMT)";e={$_.ExecutionStartTime}},@{n="ExecutionEndTime (GMT)";e={$_.ExecutionEndTime}},@{n='ResultType';e={$_.ResultType -replace "1","Timeout"-replace "2","Poisoned" -replace "3","Succeeded" -replace "4","Failed" -replace "5","Quarantined" -replace "6","Rejected"}},@{n='Error';e={$_.Error -replace "`r`n","`r"}},@{n='Exception';e={$_.Exception -replace "`r`n","`r"}},FailureContext,@{n='ExecutionContext';e={$_.ExecutionContext -replace "`r`n","`r"}},RetryCount,ServiceName,ResultName,StateAttribute*| Out-GridView -title $titleprobeevents
 	}
 	if ($Script:KnownIssueDetectionAlreadydone -eq $false) {KnownIssueDetection $MonitorToInvestigate $ResponderToInvestigate}
 }
@@ -591,65 +591,93 @@ Param( [String]$MonitorToInvestigate )
 	
 	if ($MonitorToInvestigate -like "ActiveSyncCTPMonitor")
 	{
+		$ActiveSyncCTPpossible401issue = $true
 		if($Script:lastProbeerror)
 		{
 			if ($Script:lastProbeerror.StateAttribute6 -ne 401)
-			{return;}
+			{$ActiveSyncCTPpossible401issue = $false}
 		}
-		write-host ("ActiveSyncCTPMonitor can fail with error 401 when BasicAuthEnabled setting in get-activesyncvirtualdirectory has been changed and set to `$false.  - KB 3125818" )
-		write-host("If this is your case , Enable Basic Authentication again if possible using the command :`nSet-activesyncvirtualdirectory -basicAuthEnabled `$true." ) 
-		write-host("Or disable this monitor using an override :`nAdd-GlobalMonitoringOverride -Identity ActiveSync\ActiveSyncCTPMonitor  -ItemType Monitor -PropertyName Enabled -PropertyValue 0" )
-		$Script:foundissue =$true;return;
+		if ($ActiveSyncCTPpossible401issue)
+		{
+			write-host ("ActiveSyncCTPMonitor can fail with error 401 when BasicAuthEnabled setting in get-activesyncvirtualdirectory has been changed and set to `$false.  - KB 3125818" )
+			write-host("If this is your case , Enable Basic Authentication again if possible using the command :`nSet-activesyncvirtualdirectory -basicAuthEnabled `$true." ) 
+			write-host("Or disable this monitor using an override :`nAdd-GlobalMonitoringOverride -Identity ActiveSync\ActiveSyncCTPMonitor  -ItemType Monitor -PropertyName Enabled -PropertyValue 0" )
+			$Script:foundissue =$true;return;
+		}
 	}
 	
 	if ($MonitorToInvestigate -like "ActiveSyncDeepTestMonitor")
 	{
+		$ActiveSyncDeepTestpossibleIndexwasoutofrangeissue = $true
 		if($Script:lastProbeerror)
 		{
 			if ($Script:lastProbeerror.Error -like "*Index was out of range*")
 			{Write-host -foreground yellow "Index was out of range error in the probe`n"}
 			else
-			{return;}
+			{$ActiveSyncDeepTestpossibleIndexwasoutofrangeissue = $false}
 		}
-		write-host ("ActiveSyncDeepTestMonitor can fail with Index was out of range error when no active database are found on the server" )
-		write-host("If this is your case , disable this monitor with this command : " ) 
-		write-host("Add-GlobalMonitoringOverride -Identity ActiveSync\ActiveSyncDeepTestMonitor  -ItemType Monitor -PropertyName Enabled -PropertyValue 0" )
-		$Script:foundissue =$true;return;
+		if ($ActiveSyncDeepTestpossibleIndexwasoutofrangeissue)
+		{
+			write-host ("ActiveSyncDeepTestMonitor can fail with Index was out of range error when no active database are found on the server" )
+			write-host("If this is your case , disable this monitor with this command : " ) 
+			write-host("Add-GlobalMonitoringOverride -Identity ActiveSync\ActiveSyncDeepTestMonitor  -ItemType Monitor -PropertyName Enabled -PropertyValue 0" )
+			$Script:foundissue =$true;return;
+		}		
 	}
 
 	if ($MonitorToInvestigate -like "ServerOneCopyInternalMonitor*")
 	{
+		$ServerOneCopyInternalpossibleWMIissue = $true
 		if($Script:lastProbeerror)
 		{
 			if ($Script:lastProbeerror.Exception -like "*Microsoft.Exchange.Monitoring.ActiveMonitoring.HighAvailability.Probes.ServiceMonitorProbe.GetCurrentSystemUpTime*")
 			{Write-host -foreground yellow "Found ProbeException in Microsoft.Exchange.Monitoring.ActiveMonitoring.HighAvailability.Probes.ServiceMonitorProbe.GetCurrentSystemUpTime`n"}
 			else
-			{return;}
+			{$ServerOneCopyInternalpossibleWMIissue = $false}
 		}
-		write-host -foreground yellow "ServerOneCopyInternalMonitor is failing to request information via WMI in GetCurrentSystemUpTime."
-		write-host -foreground yellow "WMI request failing should be : SELECT LastBootUpTime FROM Win32_OperatingSystem WHERE Primary='true'"
-		write-host -foreground yellow "This may be investiguated at WMI level looking for this request"
-		write-host  -foreground yellow "This WMI request is planned to be replaced in future version higher than 15.00.1187.000 likely CU13 by direct Windows native call without going through WMI layer.( for reference OfficeMain:2908185)"
-		$Script:foundissue =$true;return;
+		if ($ServerOneCopyInternalpossibleWMIissue )
+		{
+			write-host -foreground yellow "ServerOneCopyInternalMonitor is failing to request information via WMI in GetCurrentSystemUpTime."
+			write-host -foreground yellow "WMI request failing should be : SELECT LastBootUpTime FROM Win32_OperatingSystem WHERE Primary='true'"
+			write-host -foreground yellow "This may be investiguated at WMI level looking for this request"
+			write-host  -foreground yellow "This WMI request is planned to be replaced in future version higher than 15.00.1187.000 likely CU13 by direct Windows native call without going through WMI layer.( for reference OfficeMain:2908185)"
+			$Script:foundissue =$true;return;
+		}		
 	}
 	if ($MonitorToInvestigate -like "ServiceHealthMSExchangeReplEndpointMonitor*")
 	{
+		$ServiceHealthMSExchangeReplEndpointpossibleDNSissue = $true
 		if($Script:lastProbeerror)
 		{
 			if ($Script:lastProbeerror.Exception -like "*because DNS didn't return any information.*")
 			{Write-host -foreground yellow "Found Exception pointing to DNS missing information`n"}
 			else
-			{return;}
+			{$ServiceHealthMSExchangeReplEndpointpossibleDNSissue = $false}
 		}
-		write-host -foreground yellow "ServiceHealthMSExchangeReplEndpointMonitor is failing due to missing DNS entry."
-		write-host -foreground yellow "Make sure that the 'Register this connection’s addresses in DNS' property is selected on the network adapter"
-		write-host -foreground yellow "https://support.microsoft.com/en-us/kb/2969070"
-		$Script:foundissue =$true;return;
+		if ($ServiceHealthMSExchangeReplEndpointpossibleDNSissue)
+		{
+			write-host -foreground yellow "ServiceHealthMSExchangeReplEndpointMonitor is failing due to missing DNS entry."
+			write-host -foreground yellow "Make sure that the 'Register this connection’s addresses in DNS' property is selected on the network adapter"
+			write-host -foreground yellow "https://support.microsoft.com/en-us/kb/2969070"
+			$Script:foundissue =$true;return;
+		}		
 	}
 	if ($MonitorToInvestigate -like "DiscoveryErrorReportMonitor*")
 	{
 		write-host -foreground yellow "DiscoveryErrorReportMonitor is Disabled by default and should not be enabled"
 		$Script:foundissue =$true;return;
+	}
+	if($Script:lastProbeerror)
+	{
+			if ($Script:lastProbeerror.Exception -like "*The underlying connection was closed*")
+			{
+				Write-host -foreground yellow "This probe error message related to underlying connection closed has been seen when connection for loopback adapter has been blocked at lower level before reaching Exchange`n"
+				Write-host -foreground yellow "You can check in IIS Default Web Site /Actions pane / Bindings that “All Unassigned” is used and this has not been changed to only allow specific IP.`n"
+				Write-host -foreground yellow "This has been seen when blocking some TLS version using Secureprotocols registry key or through GPO.`n"
+				Write-host -foreground yellow "You can check if some TLS version are disabled under HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols (https://techcommunity.microsoft.com/t5/exchange-team-blog/exchange-server-tls-guidance-part-2-enabling-tls-1-2-and/ba-p/607761).`n"
+				Write-host -foreground yellow "You may also check if this is linked with antivirus or local firewall rules.`n"
+				$Script:foundissue =$true;return;
+			}
 	}
 }
 
@@ -846,9 +874,10 @@ if ($Collect)
 {  CollectMaLogs $MyInvocation.MyCommand.Path}
 
 $pathforlogsspecified =$false
-$usinglocalpath =$false 
+$usinglocalpath =$false
+$exchangeversion = $false 
 if ( -not ($pathforlogs))
-{
+{	
 	try
 	{
 		$exchangeversion = (get-exchangeserver -identity $env:computername).AdminDisplayVersion.tostring()
