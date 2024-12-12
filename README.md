@@ -4,6 +4,8 @@ The large majority of bluescreen and process recycle you can encounter on Exchan
 
 Managed Availability Troubleshooter script can help troubleshoot issues related to this module.
 
+**This script ManagedAvailabilityTroubleshooter.ps1 has moved to the Microsoft support github. You can download it at https://github.com/microsoft/CSS-Exchange/releases**
+
 ## This tool helps troubleshoot these scenarios
 – **Bluescreen / Force reboot**
 Here is the information you will see if you capture a memory.dmp during a crash triggered by Managed Availability:
